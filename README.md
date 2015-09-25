@@ -56,14 +56,6 @@ go get github.com/yahoo/gryffin/...
 
 ### Run
 
-#### Example 1: A site with 1M+ URLs
-A typical site with millions of URLs like news.yahoo.com is scanned below to show the importance of 
-TBD: Link to news/finance scan video
-
-#### Example 2: A rich app
-TBD: Link to Flickr scan video
-
-
 ## TODO 
 
 1. Mobile browser user agent
