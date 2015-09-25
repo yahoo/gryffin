@@ -77,7 +77,7 @@ TBD: Link to Flickr scan video
 ## Credits 
 
 - Adonis Fung @ Yahoo, for the asynchronous phantomjs based crawler and DOM event navigator.
-- Simhash algorithm](http://www.cs.princeton.edu/courses/archive/spring04/cos598B/bib/CharikarEstim.pdf) by Moses Charikar
+- [Simhash algorithm](http://www.cs.princeton.edu/courses/archive/spring04/cos598B/bib/CharikarEstim.pdf) by Moses Charikar
 - Simhash implementation provided by [mfonda/simhash](https://github.com/mfonda/simhash). 
 - [Sqlmap](http://sqlmap.org/) 
 - [Arachni](http://www.arachni-scanner.com/)
