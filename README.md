@@ -45,7 +45,7 @@ Gryffin is built on the publisher-subscriber model. Each component is either a p
     - with `--max-msg-size=5000000`
 6. Kibana and Elastic search, for dashboarding
     - listening to JSON over port 5000
-    - Preconfigured docker image available in https://hub.docker.com/r/yukinying/docker-elk/
+    - Preconfigured docker image available in https://hub.docker.com/r/yukinying/elk/
 
 
 ### Installation
