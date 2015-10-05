@@ -6,7 +6,6 @@ package distance
 
 import (
 	"bytes"
-	// "fmt"
 	"io"
 
 	"github.com/mfonda/simhash"
@@ -31,11 +30,12 @@ func Fingerprint(r io.Reader, shingle int) uint64 {
 		z := html.NewTokenizer(r)
 		// TODO - export the max token count as an function argument.
 		count := 0
-		for tt := z.Next(); count < 500 && tt != html.ErrorToken; tt = z.Next() {
+		for tt := z.Next(); count < 5000 && tt != html.ErrorToken; tt = z.Next() {
 			t := z.Token()
 			count++
 			genFeatures(&t, cf)
 		}
+
 	}()
 
 	// Collect the features.

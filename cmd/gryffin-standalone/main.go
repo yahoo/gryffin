@@ -68,20 +68,16 @@ func linkChannels(s *gryffin.Scan) {
 			}()
 
 			go func() {
-				isUnique := false
+
+				//
+				// Renderer will close all channels when a page is duplicated.
+				// Therefore we don't need to test whether the link is coming
+				// from a duplicated page or not
 				for newScan := range r.GetLinks() {
-
-					// do the evaluation once only.
-					isUnique = isUnique || scan.IsUnique()
-
-					if isUnique {
-
-						if ok := newScan.ApplyLinkRules(); ok {
-							wg.Add(1)
-							chanRateLimit <- newScan
-						}
+					if ok := newScan.ApplyLinkRules(); ok {
+						wg.Add(1)
+						chanRateLimit <- newScan
 					}
-
 				}
 
 				scan.Logm("Get Links", "Finished")
@@ -95,6 +91,7 @@ func linkChannels(s *gryffin.Scan) {
 	go func() {
 		for scan := range chanFuzz {
 
+			wg.Add(1) // we got two fuzzers, so add one more worker to the worker group.
 			go func() {
 				f := &arachni.Fuzzer{}
 				f.Fuzz(scan)
@@ -103,8 +100,8 @@ func linkChannels(s *gryffin.Scan) {
 			go func() {
 				f := &sqlmap.Fuzzer{}
 				f.Fuzz(scan)
+				wg.Done()
 			}()
-			// Finished crawling a link...
 		}
 
 	}()
@@ -161,17 +158,23 @@ func main() {
 
 	}
 
+	fmt.Println("=== Running Gryffin ===")
+
+	var w io.Writer
 	// TCP port listening messages.
 	tcpout, err := net.Dial("tcp", "localhost:5000")
 	if err != nil {
-		fmt.Println("Cannot establish tcp connection to log listener.")
+		// fmt.Println("Cannot establish tcp connection to log listener.")
+		w = os.Stdout
+	} else {
+		w = io.MultiWriter(os.Stdout, tcpout)
 	}
-
-	w := io.MultiWriter(os.Stdout, tcpout)
 
 	scan := gryffin.NewScan(*method, url, *body, data.NewMemoryStore(), w)
 	scan.Logm("Main", "Started")
 
 	linkChannels(scan)
+
+	fmt.Println("=== End Running Gryffin ===")
 
 }

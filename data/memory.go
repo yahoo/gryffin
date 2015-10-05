@@ -58,6 +58,11 @@ func (m *MemoryStore) DelPrefix(prefix string) {
 	}
 }
 
+// Dummy method
+func (m *MemoryStore) Publish(k string, d interface{}) {
+
+}
+
 // NewMemoryStore creates the new store.
 func NewMemoryStore() *MemoryStore {
 	m := MemoryStore{

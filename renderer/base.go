@@ -11,12 +11,14 @@ import (
 type BaseRenderer struct {
 	chanResponse chan *gryffin.Scan
 	chanLinks    chan *gryffin.Scan
+	done         chan string // done, notify with a string of the "reason", e.g. terminated, completed, etc.
 }
 
 func (r *BaseRenderer) Do(s *gryffin.Scan) {
 	// Dummy operation, just close the channels.
 	defer close(r.chanResponse)
 	defer close(r.chanLinks)
+	defer close(r.done)
 }
 
 func (r *BaseRenderer) GetRequestBody() <-chan *gryffin.Scan {
