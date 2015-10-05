@@ -23,6 +23,7 @@ import (
 type PhantomJSRenderer struct {
 	BaseRenderer
 	Timeout int
+	process *os.Process
 }
 
 type input struct {
@@ -118,10 +119,64 @@ func (l *link) toScan(parent *gryffin.Scan) *gryffin.Scan {
 	return nil
 }
 
+func (r *PhantomJSRenderer) extract(stdout io.ReadCloser, s *gryffin.Scan) {
+
+	defer close(r.done)
+
+	dec := json.NewDecoder(stdout)
+	for {
+		var m message
+		err := dec.Decode(&m)
+		if err == io.EOF {
+			return
+		} else {
+			if m.responseMessage != nil {
+				m.Response.fill(s)
+				if s.IsDuplicatedPage() {
+					return
+				}
+
+				r.chanResponse <- s
+				for _, link := range m.Response.Details.Links {
+					if newScan := link.toScan(s); newScan != nil && newScan.IsScanAllowed() {
+						r.chanLinks <- newScan
+					}
+				}
+			} else if m.domMessage != nil {
+				for _, link := range m.domMessage.Links {
+					if newScan := link.toScan(s); newScan != nil && newScan.IsScanAllowed() {
+						r.chanLinks <- newScan
+					}
+				}
+			}
+		}
+	}
+
+}
+
+func (r *PhantomJSRenderer) kill(reason string, s *gryffin.Scan) {
+	if err := r.process.Kill(); err == nil {
+		s.Logmf("PhantomjsRenderer.Do", "[%s] Terminating the crawl process.", reason)
+	}
+}
+
+func (r *PhantomJSRenderer) wait(s *gryffin.Scan) {
+
+	select {
+	case <-r.done:
+		r.kill("Cleanup", s)
+	case <-time.After(time.Duration(r.Timeout) * time.Second):
+		r.kill("Timeout", s)
+	}
+	close(r.chanResponse)
+	close(r.chanLinks)
+}
+
 func (r *PhantomJSRenderer) Do(s *gryffin.Scan) {
 
 	r.chanResponse = make(chan *gryffin.Scan, 10)
 	r.chanLinks = make(chan *gryffin.Scan, 10)
+	r.done = make(chan string)
 
 	// Construct the command.
 	// render.js http(s)://<host>[:port][/path] [{"method":"post", "data":"a=1&b=2"}]
@@ -167,64 +222,12 @@ func (r *PhantomJSRenderer) Do(s *gryffin.Scan) {
 		return
 	}
 
-	kill := func(reason string) {
-		if err := cmd.Process.Kill(); err != nil {
-			// TODO - forgive "os: process already finished"
-			s.Error("PhantomjsRenderer.Do", err)
-			// log.Printf("error: %s", err)
-		} else {
-			s.Logmf("PhantomjsRenderer.Do", "[%s] Terminating the crawl process.", reason)
-		}
-	}
-	// Kill when timeout
-	_ = time.Second
-	if r.Timeout != 0 {
-		timeout := func() {
-			<-time.After(time.Duration(r.Timeout) * time.Second)
-			kill("Timeout")
-		}
-		go timeout()
-	}
+	r.process = cmd.Process
 
-	crawl := func() {
-		defer close(r.chanResponse)
-		defer close(r.chanLinks)
+	// wait until done or timeout.
+	go r.extract(stdout, s)
+	go r.wait(s)
 
-		dec := json.NewDecoder(stdout)
-
-		for {
-			var m message
-			err := dec.Decode(&m)
-			if err == io.EOF {
-				return
-				break
-			} else {
-				if m.responseMessage != nil {
-					m.Response.fill(s)
-					if s.IsDuplicatedPage() {
-						kill("Duplicated")
-						return
-					}
-					s.Logm("PhantomjsRenderer.Do.UniqueCrawl", m.MsgType)
-					r.chanResponse <- s
-					for _, link := range m.Response.Details.Links {
-						if newScan := link.toScan(s); newScan != nil && newScan.IsScanAllowed() {
-							r.chanLinks <- newScan
-						}
-					}
-				} else if m.domMessage != nil {
-					for _, link := range m.domMessage.Links {
-						if newScan := link.toScan(s); newScan != nil && newScan.IsScanAllowed() {
-							r.chanLinks <- newScan
-						}
-					}
-				}
-			}
-		}
-
-		cmd.Wait()
-	}
-
-	go crawl()
+	cmd.Wait()
 
 }

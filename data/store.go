@@ -10,5 +10,5 @@ type Store interface {
 	Get(key string) (value interface{}, ok bool)
 	Set(key string, value interface{}) bool
 	IncrBy(key string, delta int64) (newVal int64)
-	DelPrefix(prefix string)
+	Publish(key string, value interface{})
 }

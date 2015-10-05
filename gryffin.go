@@ -9,29 +9,21 @@ package gryffin
 
 import (
 	"bytes"
-	// "fmt"
-	// "encoding/hex"
 	"encoding/json"
-	"hash/fnv"
-	"io/ioutil"
-	// "log"
 	"fmt"
+	"hash/fnv"
 	"io"
+	"io/ioutil"
 	"net/http"
 	"net/http/cookiejar"
 	"net/url"
 	"strconv"
 	"strings"
 	"time"
-	// "os"
-	// "strings"
 
 	"github.com/yahoo/gryffin/data"
 	"github.com/yahoo/gryffin/html-distance"
 )
-
-// TODO, add https://godoc.org/github.com/mfonda/simhash
-// TODO, add it via vendoring.
 
 // A Scan consists of the job, target, request and response.
 type Scan struct {
@@ -46,18 +38,15 @@ type Scan struct {
 	Cookies      []*http.Cookie
 	Fingerprint  Fingerprint
 	HitCount     int
-	Session      data.Store
 	LogWriter    io.Writer
+	Session      data.Store
 }
 
 // Job stores the job id and config (if any).
 type Job struct {
 	ID             string
 	DomainsAllowed []string // Domains that we would crawl
-	// Config         Config   // unused currently. It would store job meta data.
 }
-
-// type Config map[string]string
 
 // Fingerprint contains all the different types of hash for the Scan (Request & Response)
 type Fingerprint struct {
@@ -66,15 +55,7 @@ type Fingerprint struct {
 	Request            uint64 // method, url, body
 	RequestFull        uint64 // request + header
 	ResponseSimilarity uint64
-	//  TODO - add simhash here.
 }
-
-// // Issue stores the findings from the fuzzer.
-// type Issue struct {
-// 	// TODO - implement this
-// 	// *Job
-// 	// *WebSite
-// }
 
 // HTTPDoer interface is to be implemented by http.Client
 type HTTPDoer interface {
@@ -94,12 +75,6 @@ type Renderer interface {
 	GetLinks() <-chan *Scan
 }
 
-// // Storage is an interface for storing sessions and persistent objects
-// type Storage interface {
-// 	Get(key string) (value interface{}, ok bool)
-// 	Set(key string, value interface{})
-// }
-
 // LogMessage contains the data fields to be marshall as a json for forwarding to the log processor.
 type LogMessage struct {
 	Service string
@@ -109,29 +84,7 @@ type LogMessage struct {
 	Url    string
 }
 
-// // Logger is an interface for writing logs.
-// // In full deployment mode, logger may send events to other receivers.
-// type Logger interface {
-// 	Log(...interface{})
-// 	Logf(string, ...interface{})
-// }
-
-// // StdLogger is a simple logger that writes to stdout.
-// type StdLogger struct{}
-
-// // Log calls log.Println
-// func (s *StdLogger) Log(v ...interface{}) {
-// 	log.Println(v...)
-// }
-
-// // Logf calls log.Printf
-// func (s *StdLogger) Logf(format string, v ...interface{}) {
-// 	log.Printf(format, v...)
-// }
-
-// TODO
-// similarity oracle. Will move these to interface and let the main package create it.
-var oracle = distance.NewOracle()
+var memoryStore = NewGryffinStore(nil, nil)
 
 // NewScan creates a scan.
 func NewScan(method, url, post string, session data.Store, writer io.Writer) *Scan {
@@ -274,7 +227,7 @@ func (s *Scan) Poke(client HTTPDoer) (err error) {
 	}
 
 	// delete the similarity case for the domain.
-	s.Session.DelPrefix("hash/unique/" + s.Request.URL.Host)
+	// s.Session.DelPrefix("hash/unique/" + s.Request.URL.Host)
 
 	// http.Request is embeded in a Request embeded in a Scan.
 	s.Response, err = client.Do(s.Request)
@@ -288,21 +241,6 @@ func (s *Scan) Poke(client HTTPDoer) (err error) {
 	s.HitCount++
 	return
 }
-
-/*
-// LogWriter writes log.
-type LogWriter struct{}
-
-// Write sends JSON message to the logger machine.
-func (w *LogWriter) Write(p []byte) (n int, err error) {
-	n, err = os.Stdout.Write(p)
-	// n = len(p)
-	return
-}
-
-// Logger is the default logger for this package.
-var Logger = log.New(&LogWriter{}, "", log.LstdFlags)
-*/
 
 // ReadResponseBody read Response.Body and fill it to ReadResponseBody.
 // It will also reconstruct the io.ReaderCloser stream.
@@ -351,27 +289,32 @@ func (s *Scan) UpdateFingerprint() {
 // RateLimit checks whether we are under the allowed rate for crawling the site.
 // It returns a delay time to wait to check for ReadyToCrawl again.
 func (s *Scan) RateLimit() int {
-	store := s.Session
-	// for each 5 second epoch, we create a key and see how many crawls are done.
-	ts := time.Now().Truncate(5 * time.Second).Unix()
-	k := "rate/" + s.Request.URL.Host + "/" + strconv.FormatInt(ts, 10)
-	if v, ok := store.Get(k); ok {
-		if v.(int64) >= 5 {
-			// s.Logm("RateLimit", "Delay 5 second")
-			// s.Logf("Wait for 5 second for %s (v:%d)", s.Request.URL, v)
-			return 5
-		}
-		// ready to crawl.
-		// TODO - this is not atomic.
-		c, _ := store.Get(k)
-		store.Set(k, c.(int64)+1)
-		// s.Logm("RateLimit", "No Delay")
+	if memoryStore.Hit(s.Request.URL.Host) {
 		return 0
 	}
+	return 5
 
-	store.Set(k, 1)
-	// s.Logm("RateLimit", "No Delay")
-	return 0
+	// store := s.Session
+	// // for each 5 second epoch, we create a key and see how many crawls are done.
+	// ts := time.Now().Truncate(5 * time.Second).Unix()
+	// k := "rate/" + s.Request.URL.Host + "/" + strconv.FormatInt(ts, 10)
+	// if v, ok := store.Get(k); ok {
+	// 	if v.(int64) >= 5 {
+	// 		// s.Logm("RateLimit", "Delay 5 second")
+	// 		// s.Logf("Wait for 5 second for %s (v:%d)", s.Request.URL, v)
+	// 		return 5
+	// 	}
+	// 	// ready to crawl.
+	// 	// TODO - this is not atomic.
+	// 	c, _ := store.Get(k)
+	// 	store.Set(k, c.(int64)+1)
+	// 	// s.Logm("RateLimit", "No Delay")
+	// 	return 0
+	// }
+
+	// store.Set(k, 1)
+	// // s.Logm("RateLimit", "No Delay")
+	// return 0
 }
 
 // IsScanAllowed check if the request URL is allowed per Job.DomainsAllowed.
@@ -394,7 +337,7 @@ func (s *Scan) IsScanAllowed() bool {
 func (s *Scan) CrawlAsync(r Renderer) {
 	s.Logm("CrawlAsync", "Started")
 	if s.IsScanAllowed() {
-		r.Do(s)
+		go r.Do(s)
 	} else {
 		s.Logm("CrawlAsync", "Scan Not Allowed")
 	}
@@ -402,37 +345,16 @@ func (s *Scan) CrawlAsync(r Renderer) {
 
 // IsDuplicatedPage checks if we should proceed based on the Response
 func (s *Scan) IsDuplicatedPage() bool {
-
 	s.UpdateFingerprint()
-	store := s.Session
-
 	f := s.Fingerprint.ResponseSimilarity
-	// TODO - tune the proximity score...
-	if !oracle.Seen(f, 2) {
-		k := "hash/unique/" + s.Request.URL.Host + "/" + strconv.FormatUint(s.Fingerprint.ResponseSimilarity, 16)
-		store.Set(k, true)
-		oracle.See(f)
+	if !memoryStore.Seen(s, f, 2) {
+		memoryStore.See(s, f)
 		s.Logm("IsDuplicatedPage", "Unique Page")
 		return false
+	} else {
+		s.Logm("IsDuplicatedPage", "Duplicate Page")
 	}
-
 	return true
-}
-
-// IsUnique checks if the response is unique or not.
-func (s *Scan) IsUnique() bool {
-	s.UpdateFingerprint()
-	store := s.Session
-
-	k := "hash/unique/" + s.Request.URL.Host + "/" + strconv.FormatUint(s.Fingerprint.ResponseSimilarity, 16)
-
-	if _, ok := store.Get(k); ok {
-		// s.Logger.Logf("Uniqueness is %t, %s", true, s.Request.URL)
-		return true
-	}
-
-	// s.Logger.Logf("Uniqueness is %t, %s", false, s.Request.URL)
-	return false
 }
 
 // Scan runs the vulnerability fuzzer, return the issue count

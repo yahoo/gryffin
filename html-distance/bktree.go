@@ -15,8 +15,8 @@ import (
 
 // Oracle answers the query if a fingerprint has been seen.
 type Oracle struct {
-	fingerprint uint64
-	nodes       [65]*Oracle
+	fingerprint uint64      // node value.
+	nodes       [65]*Oracle // leaf nodes
 }
 
 // NewOracle return an oracle that could tell if the fingerprint has been seen or not.

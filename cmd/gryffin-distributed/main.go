@@ -133,16 +133,16 @@ func crawl() {
 			}()
 
 			go func() {
-				isUnique := false
+
+				//
+				// Renderer will close all channels when a page is duplicated.
+				// Therefore we don't need to test whether the link is coming
+				// from a duplicated page or not
 				for s := range r.GetLinks() {
-					// do the evaluation once only.
-					isUnique = isUnique || scan.IsUnique()
-					if isUnique {
-						if ok := s.ApplyLinkRules(); ok {
-							err := producer.Publish("seed", s.Json())
-							if err != nil {
-								fmt.Println("Could not publish", "seed", err)
-							}
+					if ok := s.ApplyLinkRules(); ok {
+						err := producer.Publish("seed", s.Json())
+						if err != nil {
+							fmt.Println("Could not publish", "seed", err)
 						}
 					}
 				}
