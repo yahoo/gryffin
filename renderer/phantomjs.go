@@ -207,6 +207,9 @@ func (r *PhantomJSRenderer) Do(s *gryffin.Scan) {
 	s.Logmf("PhantomjsRenderer.Do", "Running: render.js")
 
 	cmd := exec.Command(
+		"phantomjs",
+		"--ssl-protocol=any",
+		"--ignore-ssl-errors=true",
 		os.Getenv("GOPATH")+"/src/github.com/yahoo/gryffin/renderer/resource/render.js",
 		url,
 		string(opt))
