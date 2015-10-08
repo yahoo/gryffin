@@ -15,7 +15,6 @@ import (
 	"time"
 
 	"github.com/yahoo/gryffin"
-	"github.com/yahoo/gryffin/data"
 	"github.com/yahoo/gryffin/fuzzer/arachni"
 	"github.com/yahoo/gryffin/fuzzer/sqlmap"
 	"github.com/yahoo/gryffin/renderer"
@@ -53,16 +52,14 @@ func linkChannels(s *gryffin.Scan) {
 	go func() {
 
 		for scan := range chanCrawl {
-			// scan := <-chanCrawl
 			r := &renderer.PhantomJSRenderer{Timeout: 10}
-			// r := &renderer.NoScriptRenderer{}
 			scan.CrawlAsync(r)
 
 			go func() {
 				if s := <-r.GetRequestBody(); s != nil {
+					// add two workers (two fuzzers)
+					wg.Add(2)
 					chanFuzz <- s
-				} else {
-					wg.Done()
 				}
 
 			}()
@@ -74,12 +71,14 @@ func linkChannels(s *gryffin.Scan) {
 				// Therefore we don't need to test whether the link is coming
 				// from a duplicated page or not
 				for newScan := range r.GetLinks() {
-					if ok := newScan.ApplyLinkRules(); ok {
+					if ok := newScan.ShouldCrawl(); ok {
+						// add one workers (a new crawl)
 						wg.Add(1)
 						chanRateLimit <- newScan
 					}
 				}
-
+				// remove one worker (finish crawl)
+				wg.Done()
 				scan.Logm("Get Links", "Finished")
 
 			}()
@@ -91,15 +90,16 @@ func linkChannels(s *gryffin.Scan) {
 	go func() {
 		for scan := range chanFuzz {
 
-			wg.Add(1) // we got two fuzzers, so add one more worker to the worker group.
 			go func() {
 				f := &arachni.Fuzzer{}
 				f.Fuzz(scan)
+				// remove a fuzzer worker.
 				wg.Done()
 			}()
 			go func() {
 				f := &sqlmap.Fuzzer{}
 				f.Fuzz(scan)
+				// remove a fuzzer worker.
 				wg.Done()
 			}()
 		}
@@ -140,6 +140,8 @@ func linkChannels(s *gryffin.Scan) {
 
 	chanStart <- s
 	close(chanStart)
+
+	// add one worker (start crawl)
 	wg.Add(1)
 	wg.Wait()
 }
@@ -170,7 +172,9 @@ func main() {
 		w = io.MultiWriter(os.Stdout, tcpout)
 	}
 
-	scan := gryffin.NewScan(*method, url, *body, data.NewMemoryStore(), w)
+	gryffin.SetLogWriter(w)
+
+	scan := gryffin.NewScan(*method, url, *body)
 	scan.Logm("Main", "Started")
 
 	linkChannels(scan)

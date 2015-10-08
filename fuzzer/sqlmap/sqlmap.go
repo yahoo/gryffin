@@ -79,6 +79,10 @@ func (s *Fuzzer) Fuzz(g *gryffin.Scan) (count int, err error) {
 
 	output, err := cmd.Output()
 
+	if err != nil {
+		return
+	}
+
 	count = s.extract(g, string(output))
 
 	g.Logm("SQLMap.Scan", fmt.Sprintf("SQLMap return %t", cmd.ProcessState.Success()))

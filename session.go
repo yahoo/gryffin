@@ -19,21 +19,26 @@ type GryffinStore struct {
 	Hashes  map[string]bool
 	Hits    map[string]int
 	store   data.Store
+	msgIn   <-chan []byte
 	msgOut  chan<- []byte
 }
 
 type PublishMessage struct {
-	T string
-	K string
-	V interface{}
+	F string      // function, i.e. See or Seen
+	T string      // type (kind), i.e. oracle or hash
+	K string      // key
+	V interface{} // value
 }
 
-func NewGryffinStore(msgIn <-chan []byte, msgOut chan<- []byte) *GryffinStore {
+func NewGryffinStore(msgOut chan<- []byte) *GryffinStore {
+
+	msgIn := make(chan []byte)
 
 	store := GryffinStore{
 		Oracles: make(map[string]*distance.Oracle),
 		Hashes:  make(map[string]bool),
 		Hits:    make(map[string]int),
+		msgIn:   msgIn,
 		msgOut:  msgOut,
 	}
 	// start a go rountine to read from the channel
@@ -46,35 +51,37 @@ func NewGryffinStore(msgIn <-chan []byte, msgOut chan<- []byte) *GryffinStore {
 	return &store
 }
 
-func (s *GryffinStore) See(scan *Scan, v interface{}) {
+func (s *GryffinStore) See(prefix string, kind string, v interface{}) {
 
-	switch v.(type) {
-	case uint64:
-		s.oracleSee(scan, v.(uint64), false)
-	case string:
-		s.hashesSee(scan, v.(string), false)
+	if kind == "oracle" {
+		s.oracleSee(prefix, v.(uint64), false)
+		return
 	}
+	if kind == "hash" {
+		s.hashesSee(prefix, v.(uint64), false)
+		return
+	}
+
+	// else, error. TODO.
 }
 
-func (s *GryffinStore) Seen(scan *Scan, v interface{}, r uint8) bool {
+func (s *GryffinStore) Seen(prefix string, kind string, v interface{}, r uint8) bool {
 
-	k := scan.Job.ID
-	switch v.(type) {
-	case uint64:
-		f := v.(uint64)
-		if oracle, ok := s.Oracles[k]; ok {
-			return oracle.Seen(f, r)
+	switch kind {
+	case "oracle":
+		if oracle, ok := s.Oracles[prefix]; ok {
+			return oracle.Seen(v.(uint64), r)
 		}
-	case string:
-		h := v.(string)
-		_, ok := s.Hashes[k+"/"+h]
+	case "hash":
+		k := prefix + "/" + strconv.FormatUint(v.(uint64), 10)
+		_, ok := s.Hashes[k]
 		return ok
 	}
 	return false
 }
 
-func (s *GryffinStore) oracleSee(scan *Scan, f uint64, localOnly bool) {
-	k := scan.Job.ID
+func (s *GryffinStore) oracleSee(prefix string, f uint64, localOnly bool) {
+	k := prefix
 	// Local update
 	oracle, ok := s.Oracles[k]
 	if !ok {
@@ -85,25 +92,29 @@ func (s *GryffinStore) oracleSee(scan *Scan, f uint64, localOnly bool) {
 
 	// Remote update
 	if !localOnly && s.msgOut != nil {
-		jsonPayload, _ := json.Marshal(&PublishMessage{T: "See", K: k, V: f})
-		s.msgOut <- jsonPayload
-		// s.publisher.Publish("shared-memory", jsonPayload)
+		go func() {
+			jsonPayload, _ := json.Marshal(&PublishMessage{F: "See", T: "oracle", K: k, V: f})
+			s.msgOut <- jsonPayload
+		}()
 	}
 }
 
-func (s *GryffinStore) hashesSee(scan *Scan, hash string, localOnly bool) {
-	k := scan.Job.ID
-	s.Hashes[k+"/"+hash] = true
+func (s *GryffinStore) hashesSee(prefix string, h uint64, localOnly bool) {
+	k := prefix + "/" + strconv.FormatUint(h, 10)
+	s.Hashes[k] = true
 	// Remote update
 	if !localOnly && s.msgOut != nil {
-		jsonPayload, _ := json.Marshal(&PublishMessage{T: "See", K: hash, V: true})
-		s.msgOut <- jsonPayload
+		go func() {
+			jsonPayload, _ := json.Marshal(&PublishMessage{F: "See", T: "hash", K: k, V: h})
+			s.msgOut <- jsonPayload
+		}()
 	}
 }
 
-func (s *GryffinStore) Hit(domain string) bool {
+func (s *GryffinStore) Hit(prefix string) bool {
+	// prefix is domain.
 	ts := time.Now().Truncate(5 * time.Second).Unix()
-	k := domain + "/" + strconv.FormatInt(ts, 10)
+	k := prefix + "/" + strconv.FormatInt(ts, 10)
 	if v, ok := s.Hits[k]; ok {
 		if v >= 5 {
 			return false

@@ -7,9 +7,11 @@ package renderer
 import (
 	"encoding/json"
 	"io"
+	"io/ioutil"
 	"net/http"
 	"os"
 	"os/exec"
+	"reflect"
 	"strconv"
 	"strings"
 	"time"
@@ -40,13 +42,24 @@ type inputHeaders struct {
 }
 
 type details struct {
-	Links []link
-	Forms []string
+	Links        []link
+	Forms        []form
+	ChildFrames  []link
+	SubResources []link
+	Redirects    []link
+	MainFrame    []link
 }
 
 type link struct {
 	Text string
 	Url  string
+}
+
+type form struct {
+	Data     string
+	DataType string
+	Method   string
+	Url      string
 }
 
 type response struct {
@@ -68,13 +81,13 @@ type domMessage struct {
 	Action   string
 	Events   []string
 	KeyChain []string
-	Links    []link
 	JSError  []string
 }
 
 type message struct {
 	*responseMessage
 	*domMessage
+	*details
 	Signature string
 	MsgType   string
 }
@@ -109,6 +122,25 @@ func (m *response) fill(s *gryffin.Scan) {
 
 }
 
+func (f *form) toScan(parent *gryffin.Scan) *gryffin.Scan {
+	m := strings.ToUpper(f.Method)
+	u := f.Url
+	var r io.Reader
+	if m == "POST" {
+		r = ioutil.NopCloser(strings.NewReader(f.Data))
+	} else {
+		u += "&" + f.Data
+	}
+
+	if req, err := http.NewRequest(m, u, r); err == nil {
+		s := parent.Spawn()
+		s.MergeRequest(req)
+		return s
+	}
+	// invalid url
+	return nil
+}
+
 func (l *link) toScan(parent *gryffin.Scan) *gryffin.Scan {
 	if req, err := http.NewRequest("GET", l.Url, nil); err == nil {
 		s := parent.Spawn()
@@ -135,23 +167,35 @@ func (r *PhantomJSRenderer) extract(stdout io.ReadCloser, s *gryffin.Scan) {
 				if s.IsDuplicatedPage() {
 					return
 				}
-
 				r.chanResponse <- s
-				for _, link := range m.Response.Details.Links {
-					if newScan := link.toScan(s); newScan != nil && newScan.IsScanAllowed() {
-						r.chanLinks <- newScan
-					}
+				r.parseDetails(&m.Response.Details, s)
+			}
+
+			if m.details != nil {
+				r.parseDetails(m.details, s)
+			}
+		}
+	}
+}
+
+func (r *PhantomJSRenderer) parseDetails(d *details, s *gryffin.Scan) {
+	v := reflect.ValueOf(*d)
+	for i := 0; i < v.NumField(); i++ {
+		if links, ok := v.Field(i).Interface().([]link); ok {
+			for _, link := range links {
+				if newScan := link.toScan(s); newScan != nil && newScan.IsScanAllowed() {
+					r.chanLinks <- newScan
 				}
-			} else if m.domMessage != nil {
-				for _, link := range m.domMessage.Links {
-					if newScan := link.toScan(s); newScan != nil && newScan.IsScanAllowed() {
-						r.chanLinks <- newScan
-					}
+			}
+		}
+		if forms, ok := v.Field(i).Interface().([]form); ok {
+			for _, form := range forms {
+				if newScan := form.toScan(s); newScan != nil && newScan.IsScanAllowed() {
+					r.chanLinks <- newScan
 				}
 			}
 		}
 	}
-
 }
 
 func (r *PhantomJSRenderer) kill(reason string, s *gryffin.Scan) {
@@ -231,6 +275,7 @@ func (r *PhantomJSRenderer) Do(s *gryffin.Scan) {
 	go r.extract(stdout, s)
 	go r.wait(s)
 
-	cmd.Wait()
+	// cmd.Wait will close the stdout pipe.
+	go cmd.Wait()
 
 }
