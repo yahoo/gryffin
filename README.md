@@ -68,6 +68,10 @@ go get -u github.com/yahoo/gryffin/...
 6. Implement a JSON serializable cookiejar. 
 7. Identify duplicate url patterns based on simhash result.
 
+## Talks and Slides
+
+- AppsecUSA 2015: [abstract](http://sched.co/3Vgm), [slide](http://go-talks.appspot.com/github.com/yukinying/talks/gryffin/gryffin.slide), [recording](https://youtu.be/IWiR2CPOHvc)
+
 ## Credits 
 
 - Adonis Fung @ Yahoo, for the asynchronous phantomjs based crawler and DOM event navigator.
