@@ -51,10 +51,12 @@ Gryffin is built on the publisher-subscriber model. Each component is either a p
 ### Installation
 
 ```
-go get github.com/yahoo/gryffin/...
+go get -u github.com/yahoo/gryffin/...
 ```
 
 ### Run
+
+(WIP)
 
 ## TODO 
 
