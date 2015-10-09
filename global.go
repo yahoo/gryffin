@@ -9,7 +9,7 @@ import (
 	// "io/ioutil"
 )
 
-var memoryStore = NewGryffinStore(false)
+var memoryStore *GryffinStore
 var logWriter io.Writer
 
 func SetMemoryStore(m *GryffinStore) {

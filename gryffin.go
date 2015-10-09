@@ -74,13 +74,19 @@ type Renderer interface {
 type LogMessage struct {
 	Service string
 	Msg     string
+	Method  string
+	Url     string
+	JobID   string
 	// Fingerprint Fingerprint
-	Method string
-	Url    string
 }
 
 // NewScan creates a scan.
 func NewScan(method, url, post string) *Scan {
+
+	// ensure we got a memory store..
+	if memoryStore == nil {
+		memoryStore = NewGryffinStore()
+	}
 
 	id := GenRandomID()
 
@@ -385,6 +391,7 @@ func (s *Scan) Logm(service, msg string) {
 		// Fingerprint: s.Fingerprint,
 		Method: s.Request.Method,
 		Url:    s.Request.URL.String(),
+		JobID:  s.Job.ID,
 	}
 	s.Log(m)
 }

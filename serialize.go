@@ -10,6 +10,11 @@ import (
 )
 
 func NewScanFromJson(b []byte) *Scan {
+	// ensure we got a memory store..
+	if memoryStore == nil {
+		memoryStore = NewGryffinStore()
+	}
+
 	var scan Scan
 	json.Unmarshal(b, &scan)
 	return &scan

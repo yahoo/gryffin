@@ -8,6 +8,7 @@ import (
 	"flag"
 	"fmt"
 	"io"
+	"math/rand"
 	"net"
 	"net/http"
 	"os"
@@ -33,6 +34,7 @@ var wq chan bool
 var t *gryffin.Scan
 
 var logWriter io.Writer
+var store *gryffin.GryffinStore
 
 // var method = flag.String("method", "GET", "the HTTP method for the request.")
 // var url string
@@ -72,9 +74,15 @@ func newProducer() *nsq.Producer {
 }
 
 func newConsumer(topic, channel string, handler nsq.HandlerFunc) *nsq.Consumer {
-	consumer, _ := nsq.NewConsumer(topic, channel, nsq.NewConfig())
+	var err error
+	consumer, err := nsq.NewConsumer(topic, channel, nsq.NewConfig())
+	if err != nil {
+		fmt.Println("Cannot create consumer", err)
+		return nil
+	}
+
 	consumer.AddHandler(handler)
-	err := consumer.ConnectToNSQLookupd("127.0.0.1:4161")
+	err = consumer.ConnectToNSQLookupd("127.0.0.1:4161")
 	if err != nil {
 		fmt.Println("Cannot connect to NSQ for consuming message", err)
 		return nil
@@ -97,6 +105,38 @@ func seed(url string) {
 		fmt.Println("Could not publish", "seed", err)
 	}
 	fmt.Printf("Seed %s injected.\n", url)
+
+}
+
+func shareCache() {
+
+	var producer *nsq.Producer
+	var consumer *nsq.Consumer
+
+	handler := nsq.HandlerFunc(func(m *nsq.Message) error {
+		store.GetRcvChan() <- m.Body
+		return nil
+	})
+
+	producer = newProducer()
+
+	go func() {
+		for {
+			// fmt.Println("SndChan: ", store.GetSndChan(), string(json))
+			err := producer.Publish("share-cache", <-store.GetSndChan())
+			if err != nil {
+				fmt.Println("Could not publish", "share-cache", err)
+			}
+		}
+	}()
+
+	rand.Seed(time.Now().UnixNano())
+
+	consumer = newConsumer("share-cache", fmt.Sprintf("%06d#ephemeral", rand.Int()%999999), handler)
+	_ = consumer
+
+	// defer producer.Stop()
+	// defer consumer.Stop()
 
 }
 
@@ -237,11 +277,15 @@ func main() {
 		return
 	}
 
+	store = gryffin.NewSharedGryffinStore()
+	gryffin.SetMemoryStore(store)
+
 	captureCtrlC()
 
 	switch service {
 
 	case "crawl":
+		shareCache()
 		crawl()
 
 	case "fuzz-sqlmap":
