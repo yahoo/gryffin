@@ -1,4 +1,4 @@
-Gryffin (beta)
+Gryffin (beta) [![Build Status](https://travis-ci.org/yahoo/gryffin.svg?branch=master)](https://travis-ci.org/yahoo/gryffin) [![GoDoc](https://godoc.org/github.com/yahoo/gryffin?status.svg)](https://godoc.org/github.com/yahoo/gryffin)
 ==========
 
 Gryffin is a large scale web security scanning platform. It is not yet another scanner. It was written to solve two specific problems with existing scanners: coverage and scale. 
