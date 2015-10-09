@@ -5,7 +5,6 @@
 package dummy
 
 import (
-	"os"
 	"testing"
 
 	"github.com/yahoo/gryffin"

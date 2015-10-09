@@ -19,8 +19,8 @@ type GryffinStore struct {
 	Hashes  map[string]bool
 	Hits    map[string]int
 	store   data.Store
-	msgIn   <-chan []byte
-	msgOut  chan<- []byte
+	snd     chan []byte
+	rcv     chan []byte
 }
 
 type PublishMessage struct {
@@ -30,25 +30,50 @@ type PublishMessage struct {
 	V interface{} // value
 }
 
-func NewGryffinStore(msgOut chan<- []byte) *GryffinStore {
-
-	msgIn := make(chan []byte)
+func NewGryffinStore(shared bool) *GryffinStore {
 
 	store := GryffinStore{
 		Oracles: make(map[string]*distance.Oracle),
 		Hashes:  make(map[string]bool),
 		Hits:    make(map[string]int),
-		msgIn:   msgIn,
-		msgOut:  msgOut,
 	}
+
+	if shared {
+		store.snd = make(chan []byte, 10)
+		store.rcv = make(chan []byte, 10)
+	}
+
 	// start a go rountine to read from the channel
-	go func() {
-		for jsonPayload := range msgIn {
-			fmt.Println("Got this", jsonPayload)
-		}
-	}()
+	go store.processRcvMsg()
 
 	return &store
+}
+
+func (s *GryffinStore) GetRcvChan() chan []byte {
+	return s.rcv
+}
+
+func (s *GryffinStore) GetSndChan() chan []byte {
+	return s.snd
+}
+
+func (s *GryffinStore) processRcvMsg() {
+	for jsonPayload := range s.rcv {
+		var m PublishMessage
+		err := json.Unmarshal(jsonPayload, &m)
+		if err != nil {
+			fmt.Println("Error in processRcvMsg")
+			continue
+		}
+		if m.F == "See" {
+			switch m.T {
+			case "hash":
+				s.hashesSee(m.K, uint64(m.V.(float64)), true)
+			case "oracle":
+				s.oracleSee(m.K, uint64(m.V.(float64)), true)
+			}
+		}
+	}
 }
 
 func (s *GryffinStore) See(prefix string, kind string, v interface{}) {
@@ -61,8 +86,6 @@ func (s *GryffinStore) See(prefix string, kind string, v interface{}) {
 		s.hashesSee(prefix, v.(uint64), false)
 		return
 	}
-
-	// else, error. TODO.
 }
 
 func (s *GryffinStore) Seen(prefix string, kind string, v interface{}, r uint8) bool {
@@ -91,10 +114,10 @@ func (s *GryffinStore) oracleSee(prefix string, f uint64, localOnly bool) {
 	oracle.See(f)
 
 	// Remote update
-	if !localOnly && s.msgOut != nil {
+	if !localOnly && s.snd != nil {
 		go func() {
 			jsonPayload, _ := json.Marshal(&PublishMessage{F: "See", T: "oracle", K: k, V: f})
-			s.msgOut <- jsonPayload
+			s.snd <- jsonPayload
 		}()
 	}
 }
@@ -103,10 +126,10 @@ func (s *GryffinStore) hashesSee(prefix string, h uint64, localOnly bool) {
 	k := prefix + "/" + strconv.FormatUint(h, 10)
 	s.Hashes[k] = true
 	// Remote update
-	if !localOnly && s.msgOut != nil {
+	if !localOnly && s.snd != nil {
 		go func() {
 			jsonPayload, _ := json.Marshal(&PublishMessage{F: "See", T: "hash", K: k, V: h})
-			s.msgOut <- jsonPayload
+			s.snd <- jsonPayload
 		}()
 	}
 }

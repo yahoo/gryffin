@@ -1,44 +1,40 @@
 package gryffin
 
 import (
+	"sync"
 	"testing"
+	"time"
 )
 
 func TestNewGryffinStore(t *testing.T) {
 
-	chanUpdate := make(chan []byte)
+	t.Parallel()
 
-	store := NewGryffinStore(chanUpdate)
-	_ = store
-	store.See("foo", "oracle", uint64(0x1234))
-	select {
-	case b := <-chanUpdate:
-		t.Log(string(b))
-	default:
-		t.Log("Got Nothing.")
+	store1 := NewGryffinStore(true)
+	store2 := NewGryffinStore(true)
 
+	var wg sync.WaitGroup
+	wg.Add(1)
+
+	go func() {
+		store1.See("foo", "oracle", uint64(0x1234))
+		b := <-store1.GetSndChan()
+		t.Log("Store1 got ", string(b))
+		store2.GetRcvChan() <- b
+		wg.Done()
+	}()
+
+	wg.Wait()
+	for i := 0; i < 100000; i++ {
+		if store2.Seen("foo", "oracle", uint64(0x1234), 2) {
+			t.Logf("Store2 see the new value in %d microseconds.", i)
+			break
+		}
+		time.Sleep(1 * time.Microsecond)
 	}
+
+	if !store2.Seen("foo", "oracle", uint64(0x1234), 2) {
+		t.Error("2nd store should see the value in oracle.", store2.Oracles)
+	}
+
 }
-
-// func TestSharedCache(t *testing.T) {
-
-//  i1 := make(chan []byte, 10)
-//  o1 := make(chan []byte, 10)
-//  s1 := NewGryffinStore(i1, o1)
-
-//  i2 := make(chan []byte, 10)
-//  o2 := make(chan []byte, 10)
-//  s2 := NewGryffinStore(i2, o2)
-
-//  s1.See("testing", uint64(0x1234))
-
-//  msg := <-o1
-//  t.Log("o1", string(msg))
-//  fmt.Println("Send message to i2", string(msg))
-//  i2 <- msg
-
-//  time.Sleep(1 * time.Second)
-
-//  t.Log(s1.Oracles)
-//  t.Log(s2.Oracles)
-// }
