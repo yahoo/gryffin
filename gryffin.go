@@ -12,16 +12,13 @@ import (
 	"encoding/json"
 	"fmt"
 	"hash/fnv"
-	"io"
 	"io/ioutil"
 	"net/http"
 	"net/http/cookiejar"
 	"net/url"
-	"strconv"
 	"strings"
 	"time"
 
-	"github.com/yahoo/gryffin/data"
 	"github.com/yahoo/gryffin/html-distance"
 )
 
@@ -38,8 +35,6 @@ type Scan struct {
 	Cookies      []*http.Cookie
 	Fingerprint  Fingerprint
 	HitCount     int
-	LogWriter    io.Writer
-	Session      data.Store
 }
 
 // Job stores the job id and config (if any).
@@ -84,10 +79,8 @@ type LogMessage struct {
 	Url    string
 }
 
-var memoryStore = NewGryffinStore(nil, nil)
-
 // NewScan creates a scan.
-func NewScan(method, url, post string, session data.Store, writer io.Writer) *Scan {
+func NewScan(method, url, post string) *Scan {
 
 	id := GenRandomID()
 
@@ -110,25 +103,12 @@ func NewScan(method, url, post string, session data.Store, writer io.Writer) *Sc
 		Job:         job,
 		Request:     req,
 		RequestBody: post,
-		Session:     session,
-		LogWriter:   writer,
 	}
-}
-
-func NewScanFromJson(b []byte, base *Scan) *Scan {
-	var scan Scan
-	json.Unmarshal(b, &scan)
-	if base != nil {
-		scan.LogWriter = base.LogWriter
-		scan.Session = base.Session
-	}
-	// fmt.Printf("Cookie: %v\n", scan.Cookies)
-	return &scan
 }
 
 // getOrigin returns the Origin of the URL (scheme, hostname, port )
 func getOrigin(u *url.URL) string {
-	return u.Scheme + u.Host
+	return u.Scheme + "://" + u.Host
 }
 
 // MergeRequest merge the request field in scan with the existing one.
@@ -143,8 +123,11 @@ func (s *Scan) MergeRequest(req *http.Request) {
 	// read the request body, and then reset the reader
 	var post []byte
 	if req.Body != nil {
-		if post, err := ioutil.ReadAll(req.Body); err != nil {
+		if post, err := ioutil.ReadAll(req.Body); err == nil {
 			req.Body = ioutil.NopCloser(bytes.NewReader(post))
+		} else {
+			// only possible error is bytes.ErrTooLarge from ioutil package.
+			s.Error("MergeRequest", err)
 		}
 	}
 
@@ -210,8 +193,6 @@ func (s *Scan) Spawn() *Scan {
 		Request:     &req,
 		RequestBody: post,
 		Cookies:     cookies,
-		Session:     s.Session,
-		LogWriter:   s.LogWriter,
 	}
 }
 
@@ -337,7 +318,7 @@ func (s *Scan) IsScanAllowed() bool {
 func (s *Scan) CrawlAsync(r Renderer) {
 	s.Logm("CrawlAsync", "Started")
 	if s.IsScanAllowed() {
-		go r.Do(s)
+		r.Do(s)
 	} else {
 		s.Logm("CrawlAsync", "Scan Not Allowed")
 	}
@@ -347,8 +328,8 @@ func (s *Scan) CrawlAsync(r Renderer) {
 func (s *Scan) IsDuplicatedPage() bool {
 	s.UpdateFingerprint()
 	f := s.Fingerprint.ResponseSimilarity
-	if !memoryStore.Seen(s, f, 2) {
-		memoryStore.See(s, f)
+	if !memoryStore.Seen(s.Job.ID, "oracle", f, 2) {
+		memoryStore.See(s.Job.ID, "oracle", f)
 		s.Logm("IsDuplicatedPage", "Unique Page")
 		return false
 	} else {
@@ -369,28 +350,19 @@ func (s *Scan) Fuzz(fuzzer Fuzzer) (int, error) {
 // 	return
 // }
 
-// ApplyLinkRules checks if the links should be queued for next crawl.
-func (s *Scan) ApplyLinkRules() bool {
+// ShouldCrawl checks if the links should be queued for next crawl.
+func (s *Scan) ShouldCrawl() bool {
 
 	s.UpdateFingerprint()
-	store := s.Session
-
-	// k := "hash/" + hex.EncodeToString(s.Fingerprint.URL)
-	k := "hash/url/" + strconv.FormatUint(s.Fingerprint.URL, 16)
-
-	// link seen before.
-	if _, ok := store.Get(k); ok {
-		// s.Logm("LinkRules", "Duplicated")
-		return false
+	f := s.Fingerprint.URL
+	if !memoryStore.Seen(s.Job.ID, "hash", f, 0) {
+		memoryStore.See(s.Job.ID, "hash", f)
+		s.Logm("ShouldCrawl", "Unique Link")
+		return true
+	} else {
+		s.Logm("ShouldCrawl", "Duplicate Link")
 	}
-	store.Set(k, true)
-	return true
-}
-
-func (s *Scan) Json() []byte {
-	b, _ := json.Marshal(s)
-	return b
-
+	return false
 }
 
 // TODO - LogFmt (fmt string)
@@ -423,9 +395,9 @@ func (s *Scan) Logf(format string, a ...interface{}) {
 }
 
 func (s *Scan) Log(v interface{}) {
-	if s.LogWriter == nil {
+	if logWriter == nil {
 		return
 	}
-	encoder := json.NewEncoder(s.LogWriter)
+	encoder := json.NewEncoder(logWriter)
 	encoder.Encode(v)
 }

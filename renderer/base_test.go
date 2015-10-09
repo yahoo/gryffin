@@ -9,7 +9,6 @@ import (
 	"testing"
 
 	"github.com/yahoo/gryffin"
-	"github.com/yahoo/gryffin/data"
 )
 
 func testCrawlAsync(t *testing.T, r gryffin.Renderer) {
@@ -19,7 +18,7 @@ func testCrawlAsync(t *testing.T, r gryffin.Renderer) {
 
 	url := "https://www.yahoo.com/"
 
-	s := gryffin.NewScan("GET", url, "", data.NewMemoryStore(), os.Stdout)
+	s := gryffin.NewScan("GET", url, "")
 	r.Do(s)
 	s = <-r.GetRequestBody()
 	// t.Logf("Got async body %s", s)

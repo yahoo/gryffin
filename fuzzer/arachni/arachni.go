@@ -53,6 +53,10 @@ func (s *Fuzzer) Fuzz(g *gryffin.Scan) (count int, err error) {
 
 	count = s.extract(g, string(output))
 
+	if err != nil {
+		return
+	}
+
 	g.Logm("Arachni.Scan", fmt.Sprintf("Arachni return %t", cmd.ProcessState.Success()))
 	return
 

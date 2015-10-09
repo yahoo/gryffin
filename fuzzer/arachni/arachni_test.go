@@ -16,7 +16,7 @@ func TestFuzzer(t *testing.T) {
 		t.Skip("Skip integration tests.")
 	}
 	s := &Fuzzer{}
-	scan := gryffin.NewScan("GET", "http://127.0.0.1:8081/xss/reflect/full1?in=change_me", "", nil, os.Stdout)
+	scan := gryffin.NewScan("GET", "http://127.0.0.1:8081/xss/reflect/full1?in=change_me", "")
 	c, err := s.Fuzz(scan)
 	if err != nil {
 		t.Error(err)
