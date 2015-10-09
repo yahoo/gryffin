@@ -11,7 +11,6 @@ import (
 	"testing"
 
 	"github.com/yahoo/gryffin"
-	"github.com/yahoo/gryffin/data"
 )
 
 var h = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -24,7 +23,7 @@ func TestMain(t *testing.T) {
 	if os.Getenv("INTEGRATION") == "" {
 		t.Skip("Skip integration tests.")
 	}
-	scan := gryffin.NewScan("GET", ts.URL, "", data.NewMemoryStore(), os.Stdout)
+	scan := gryffin.NewScan("GET", ts.URL, "")
 	linkChannels(scan)
 
 }

@@ -17,7 +17,7 @@ func TestFuzzer(t *testing.T) {
 	}
 
 	s := &Fuzzer{}
-	scan := gryffin.NewScan("GET", "http://127.0.0.1:8082/dvwa/vulnerabilities/sqli/?id=1&Submit=Submit", "", nil, os.Stdout)
+	scan := gryffin.NewScan("GET", "http://127.0.0.1:8082/dvwa/vulnerabilities/sqli/?id=1&Submit=Submit", "")
 	c, err := s.Fuzz(scan)
 	if err != nil {
 		t.Error(err)

@@ -4,27 +4,28 @@
 
 package main
 
-import (
-	"net/http"
-	"net/http/httptest"
-	"os"
-	"testing"
+// Unit test for gryffin-distributed is still on todo list.
+//
+// import (
+// 	"net/http"
+// 	"net/http/httptest"
+// 	"os"
+// 	"testing"
 
-	"github.com/yahoo/gryffin"
-	"github.com/yahoo/gryffin/data"
-)
+// 	"github.com/yahoo/gryffin"
+// )
 
-var h = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-	w.Write([]byte("Hello World"))
-})
+// var handler = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+// 	w.Write([]byte("Hello World"))
+// })
 
-var ts = httptest.NewServer(h)
+// var ts = httptest.NewServer(handler)
 
-func TestMain(t *testing.T) {
-	if os.Getenv("INTEGRATION") == "" {
-		t.Skip("Skip integration tests.")
-	}
-	scan := gryffin.NewScan("GET", ts.URL, "", data.NewMemoryStore(), os.Stdout)
-	linkChannels(scan)
+// func TestMain(t *testing.T) {
+// 	if os.Getenv("INTEGRATION") == "" {
+// 		t.Skip("Skip integration tests.")
+// 	}
+// 	scan := gryffin.NewScan("GET", ts.URL, "")
+// 	linkChannels(scan)
 
-}
+// }
