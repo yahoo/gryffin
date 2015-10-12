@@ -13,6 +13,7 @@ import (
 	"fmt"
 	"hash/fnv"
 	"io/ioutil"
+	"net"
 	"net/http"
 	"net/http/cookiejar"
 	"net/url"
@@ -93,7 +94,12 @@ func NewScan(method, url, post string) *Scan {
 	}
 
 	// put the host component of the url as the domains to be allowed
-	job.DomainsAllowed = []string{strings.SplitN(req.URL.Host, ":", 2)[0]}
+	host, _, err := net.SplitHostPort(req.URL.Host)
+	if err != nil {
+		job.DomainsAllowed = []string{req.URL.Host}
+	} else {
+		job.DomainsAllowed = []string{host}
+	}
 
 	// // Add chrome user agent
 	req.Header.Set("User-Agent", "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_10_4) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/44.0.2403.107 Safari/537.36")
@@ -305,7 +311,11 @@ func (s *Scan) IsScanAllowed() bool {
 		return true
 	}
 
-	host := strings.SplitN(s.Request.URL.Host, ":", 2)[0]
+	host, _, err := net.SplitHostPort(s.Request.URL.Host)
+	if err != nil {
+		host = s.Request.URL.Host
+	}
+
 	for _, allowed := range s.Job.DomainsAllowed {
 		if host == allowed {
 			return true
