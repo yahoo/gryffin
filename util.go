@@ -15,5 +15,5 @@ func GenRandomID() string {
 	// UUID generation is trivial per RSC in https://groups.google.com/d/msg/golang-dev/zwB0k2mpshc/l3zS3oxXuNwJ
 	buf := make([]byte, 16)
 	io.ReadFull(rand.Reader, buf)
-	return fmt.Sprintf("%x", buf)
+	return fmt.Sprintf("%X", buf)
 }
