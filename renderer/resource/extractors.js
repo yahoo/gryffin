@@ -299,7 +299,7 @@ function extractRequests(sink, el) {
     function getForm(f) {
         var method = f.method ? f.method.toLowerCase() : 'get',
             url = f.action,
-            urlparams = [], qPos,
+            urlparams = [], a,
             values = [], submits = [], multiDefaults = {}, dataType = {}, j = 0, input;
 
         // for javascript-uri submissions, yielding FormRequest with invalid url is meaningless
@@ -346,11 +346,13 @@ function extractRequests(sink, el) {
         if (!re_urls.test(url))
             url = window.location.href;
 
+        a = document.createElement('a');
+        a.href = url;
         // process any parameters given as part of the url
-        qPos = url.indexOf('?');
-        if (qPos > 0 && qPos !== url.length - 1) { // latter case means last char not ?
+        if (a.search.length > 1) {
             // url's params will be later combined with those collected in form, and used for deduplication
-            urlparams = url.substring(qPos + 1).split('&');
+            urlparams = a.search.substring(1).split('&');
+
             // url's params are considered of hidden types
             urlparams.forEach(function(param){
                 if (param = param.split('=')[0])
@@ -360,7 +362,8 @@ function extractRequests(sink, el) {
             // for GET method, transfer url's params to values for deduplication
             if (method === 'get') {
                 values = urlparams.concat(values);
-                url = url.substring(0, qPos);
+                a.search = '';
+                url = a.href;
             }
         }
 
