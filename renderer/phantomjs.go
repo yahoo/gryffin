@@ -9,6 +9,7 @@ import (
 	"io"
 	"io/ioutil"
 	"net/http"
+	"net/url"
 	"os"
 	"os/exec"
 	"reflect"
@@ -129,7 +130,11 @@ func (f *form) toScan(parent *gryffin.Scan) *gryffin.Scan {
 	if m == "POST" {
 		r = ioutil.NopCloser(strings.NewReader(f.Data))
 	} else {
-		u += "&" + f.Data
+		parsed, err := url.Parse(u)
+		if err == nil {
+			parsed.RawQuery = f.Data
+			u = parsed.String()
+		}
 	}
 
 	if req, err := http.NewRequest(m, u, r); err == nil {
