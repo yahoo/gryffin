@@ -324,16 +324,16 @@ function extractRequests(sink, el) {
             } else if ((nodeName === 'input' && ['reset','button'].indexOf(type) === -1)
                     || ['textarea','keygen'].indexOf(nodeName) !== -1) {
                 
-                if (typeof(f[name].length) === 'undefined') // an unique element with such a 'name'
+                if (typeof(input.length) === 'undefined') // an unique element with such a 'name'
                     values.push([name, value].join('='));
                 else if (!dataType[name]) // i.e., radio/checkbox, and the first time being recorded
-                    multiDefaults[name] = [].map.call(f[name], function(opt){return [name, encodeURIComponent(opt.value)].join('=')});
+                    multiDefaults[name] = [].map.call(input, function(opt){return [name, encodeURIComponent(opt.value)].join('=')});
 
             // <select> element
             } else if (nodeName === 'select') {
                 
                 if (input.options.length)
-                    multiDefaults[name] = [].map.call(f[name], function(opt){return [name, encodeURIComponent(opt.value)].join('=')});
+                    multiDefaults[name] = [].map.call(input, function(opt){return [name, encodeURIComponent(opt.value)].join('=')});
                 else
                     values.push(name + '=');
             }
