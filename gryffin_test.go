@@ -51,11 +51,12 @@ func TestNewScanFromJson(t *testing.T) {
 
 	// Test arbritary url.
 	s := NewScan("GET", ts.URL, "")
-	_ = s.Poke(&http.Client{})
+	if err := s.Poke(&http.Client{}); err != nil {
+		t.Error(err)
+	}
 	j := s.Json()
-
 	if j == nil {
-		t.Error("scan.Json should return a json string.")
+		t.Fatal("scan.Json should return a json string.")
 	}
 
 	s2 := NewScanFromJson(j)

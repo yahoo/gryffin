@@ -20,7 +20,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/yahoo/gryffin/html-distance"
+	distance "github.com/yahoo/gryffin/html-distance"
 )
 
 // A Scan consists of the job, target, request and response.
@@ -83,7 +83,6 @@ type LogMessage struct {
 
 // NewScan creates a scan.
 func NewScan(method, url, post string) *Scan {
-
 	// ensure we got a memory store..
 	if memoryStore == nil {
 		memoryStore = NewGryffinStore()
@@ -95,7 +94,6 @@ func NewScan(method, url, post string) *Scan {
 
 	req, err := http.NewRequest(method, url, ioutil.NopCloser(strings.NewReader(post)))
 	if err != nil {
-		// s.Log("Invalid url for NewScan: %s", err)
 		return nil
 	}
 
@@ -107,7 +105,7 @@ func NewScan(method, url, post string) *Scan {
 		job.DomainsAllowed = []string{host}
 	}
 
-	// // Add chrome user agent
+	// Add chrome user agent
 	req.Header.Set("User-Agent", "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_10_4) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/44.0.2403.107 Safari/537.36")
 
 	return &Scan{
