@@ -64,7 +64,7 @@ func (n *Oracle) Seen(f uint64, r uint8) bool {
 			break
 		}
 		if c := n.nodes[k]; c != nil {
-			if c.Seen(f, r) == true {
+			if c.Seen(f, r) {
 				return true
 			}
 		}

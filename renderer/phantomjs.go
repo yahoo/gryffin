@@ -110,7 +110,7 @@ func (m *response) fill(s *gryffin.Scan) {
 	resp := &http.Response{
 		Request:    s.Request,
 		StatusCode: m.Status,
-		Status:     strconv.FormatInt(int64(m.Status), 10),
+		Status:     strconv.Itoa(m.Status),
 		Proto:      "HTTP/1.1",
 		ProtoMajor: 1,
 		ProtoMinor: 1,
