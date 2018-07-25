@@ -40,7 +40,6 @@ func (m *MemoryStore) Get(key string) (value interface{}, ok bool) {
 	default:
 		return value, ok
 	}
-	return value, ok
 }
 
 // IncrBy increments the value pointed by key with the delta, and return the new value.
@@ -51,7 +50,7 @@ func (m *MemoryStore) IncrBy(key string, delta int64) (newVal int64) {
 }
 
 func (m *MemoryStore) DelPrefix(prefix string) {
-	for k, _ := range m.heap {
+	for k := range m.heap {
 		if strings.HasPrefix(k, prefix) {
 			delete(m.heap, k)
 		}

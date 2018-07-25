@@ -92,6 +92,4 @@ func (r *NoScriptRenderer) Do(s *gryffin.Scan) {
 	}
 
 	go crawl()
-
-	return
 }

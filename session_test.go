@@ -18,8 +18,7 @@ func TestNewGryffinStore(t *testing.T) {
 
 	go func() {
 		store1.See("foo", "oracle", uint64(0x1234))
-		var b []byte
-		b = <-store1.GetSndChan()
+		var b []byte = <-store1.GetSndChan()
 		t.Log("Store1 got ", string(b))
 		store2.GetRcvChan() <- b
 

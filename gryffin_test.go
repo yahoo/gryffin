@@ -51,11 +51,12 @@ func TestNewScanFromJson(t *testing.T) {
 
 	// Test arbritary url.
 	s := NewScan("GET", ts.URL, "")
-	_ = s.Poke(&http.Client{})
+	if err := s.Poke(&http.Client{}); err != nil {
+		t.Fatalf("error in s.Poke: %v", err)
+	}
 	j := s.Json()
-
 	if j == nil {
-		t.Error("scan.Json should return a json string.")
+		t.Fatalf("scan.Json: got %v, want a json string", j)
 	}
 
 	s2 := NewScanFromJson(j)
@@ -63,7 +64,6 @@ func TestNewScanFromJson(t *testing.T) {
 		t.Error("NewScanFromJson should return a scan.")
 	}
 	t.Log(s2)
-
 }
 
 func TestGetOrigin(t *testing.T) {

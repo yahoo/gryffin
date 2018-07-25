@@ -117,9 +117,15 @@ func BenchmarkFingerprint(b *testing.B) {
 func BenchmarkFingerprintWithExternalHTML(b *testing.B) {
 
 	b.Skip("Skip external dependent tests.")
-	resp, _ := http.Get("https://www.yahoo.com/")
+	resp, err := http.Get("https://www.yahoo.com/")
+	if err != nil {
+		b.Fatal(err)
+	}
 	defer resp.Body.Close()
-	input, _ := ioutil.ReadAll(resp.Body)
+	input, err := ioutil.ReadAll(resp.Body)
+	if err != nil {
+		b.Fatal(err)
+	}
 
 	b.ResetTimer()
 

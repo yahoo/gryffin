@@ -2,9 +2,11 @@
 // Use of this source code is governed by a BSD-style
 // license that can be found in the LICENSE file.
 
-// Package html-distance is a go library for computing the proximity of the HTML pages. The implementation similiarity fingerprint is Charikar's simhash.
+// Package distance is a go library for computing the proximity of the HTML pages.
+// The implementation similiarity fingerprint is Charikar's simhash.
 //
-// Distance is the hamming distance of the fingerprints. Since fingerprint is of size 64 (inherited from hash/fnv), Similiarity is defined as 1 - d / 64.
+// Distance is the hamming distance of the fingerprints. Since fingerprint is
+// of size 64 (inherited from hash/fnv), Similiarity is defined as 1 - d / 64.
 //
 // In normal scenario, similarity > 95% (i.e. d>3) could be considered as duplicated html pages.
 package distance
@@ -64,7 +66,7 @@ func (n *Oracle) Seen(f uint64, r uint8) bool {
 			break
 		}
 		if c := n.nodes[k]; c != nil {
-			if c.Seen(f, r) == true {
+			if c.Seen(f, r) {
 				return true
 			}
 		}
