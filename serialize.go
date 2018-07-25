@@ -20,24 +20,22 @@ func NewScanFromJson(b []byte) *Scan {
 	return &scan
 }
 
-// func (s *Scan) Json() []byte {
-// 	ss := &SerializableScan{
-// 		s,
-// 		&SerializableRequest{s.Request, ""},
-// 		&SerializableResponse{
-// 			s.Response,
-// 			&SerializableRequest{s.Request, ""},
-// 		},
-// 	}
-// 	log.Printf("DMDEBUG ss=%#v", ss)
-// 	b, err := json.Marshal(ss)
-// 	if err != nil {
-// 		log.Printf("DMDEBUG error in json.Marshal: %v", err)
-// 		s.Error("Json", err)
-// 	}
-// 	return b
+func (s *Scan) Json() []byte {
+	ss := &SerializableScan{
+		s,
+		&SerializableRequest{s.Request, ""},
+		&SerializableResponse{
+			s.Response,
+			&SerializableRequest{s.Request, ""},
+		},
+	}
+	b, err := json.Marshal(ss)
+	if err != nil {
+		s.Error("Json", err)
+	}
+	return b
 
-// }
+}
 
 type SerializableScan struct {
 	*Scan
