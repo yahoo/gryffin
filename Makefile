@@ -8,7 +8,7 @@ VETARGS?=-asmdecl -atomic -bool -buildtags -copylocks -methods \
          -nilfunc -rangeloops -shift -structtags -unsafeptr
          #-printf 
 
-all: deps format
+all: deps format build 
 
 cov:
 	gocov test | gocov-html > /tmp/coverage.html
