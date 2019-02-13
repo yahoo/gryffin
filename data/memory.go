@@ -58,7 +58,7 @@ func (m *MemoryStore) DelPrefix(prefix string) {
 	}
 }
 
-// Dummy method
+// Publish: Dummy method
 func (m *MemoryStore) Publish(k string, d interface{}) {
 
 }

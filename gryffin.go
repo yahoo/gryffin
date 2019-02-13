@@ -354,7 +354,7 @@ func (s *Scan) IsDuplicatedPage() bool {
 	return true
 }
 
-// Scan runs the vulnerability fuzzer, return the issue count
+// Fuzz: Scan runs the vulnerability fuzzer, return the issue count
 func (s *Scan) Fuzz(fuzzer Fuzzer) (int, error) {
 	c, err := fuzzer.Fuzz(s)
 	return c, err
