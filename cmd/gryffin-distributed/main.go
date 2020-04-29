@@ -17,7 +17,7 @@ import (
 	"syscall"
 	"time"
 
-	"github.com/bitly/go-nsq"
+	"github.com/nsqio/go-nsq"
 
 	"github.com/yahoo/gryffin"
 	"github.com/yahoo/gryffin/fuzzer/arachni"

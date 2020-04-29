@@ -13,6 +13,7 @@ import (
 	"fmt"
 	"hash/fnv"
 	"io/ioutil"
+	"log"
 	"net"
 	"net/http"
 	"net/http/cookiejar"
@@ -20,7 +21,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/yahoo/gryffin/html-distance"
+	distance "github.com/yahoo/gryffin/html-distance"
 )
 
 // A Scan consists of the job, target, request and response.
@@ -212,7 +213,7 @@ func (s *Scan) Poke(client HTTPDoer) (err error) {
 
 	s.Logm("Poke", "Poking")
 
-	// Add 5s timeout if it is http.client
+	// Add 5s timeout if it is http.Client
 	switch client.(type) {
 	case *http.Client:
 		client.(*http.Client).Timeout = time.Duration(3) * time.Second
@@ -241,6 +242,8 @@ func (s *Scan) ReadResponseBody() {
 		if b, err := ioutil.ReadAll(s.Response.Body); err == nil {
 			s.ResponseBody = string(b)
 			s.Response.Body = ioutil.NopCloser(bytes.NewReader(b))
+		} else {
+			log.Printf("ReadResponseBody: err=%v", err)
 		}
 	}
 }
