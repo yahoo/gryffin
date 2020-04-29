@@ -1,13 +1,6 @@
 
 # This Makefile is adopted from https://github.com/hashicorp/consul/blob/master/Makefile
 
-DEPS = $(shell go list -f '{{range .TestImports}}{{.}} {{end}}' ./...)
-
-PACKAGES = $(shell go list ./...)
-VETARGS?=-asmdecl -atomic -bool -buildtags -copylocks -methods \
-         -nilfunc -rangeloops -shift -structtags -unsafeptr
-         #-printf
-
 all: format build
 
 cov:
@@ -33,16 +26,9 @@ test-cover:
 	go test --cover ./...
 
 format:
-	@go fmt $(PACKAGES)
+	@gofmt -l .
 
 vet:
-	@go tool vet 2>/dev/null ; if [ $$? -eq 3 ]; then \
-		go get golang.org/x/tools/cmd/vet; \
-	fi
-	@go tool vet $(VETARGS) . ; if [ $$? -eq 1 ]; then \
-		echo ""; \
-		echo "Vet found suspicious constructs. Please check the reported constructs"; \
-		echo "and fix them if necessary before submitting the code for reviewal."; \
-	fi
+	@go vet ./...
 
 .PHONY: all cov build test vet web web-push
