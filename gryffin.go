@@ -148,9 +148,9 @@ func (s *Scan) MergeRequest(req *http.Request) {
 	}
 
 	// TODO - drop if Method, URL, Body are same..
-	if req == s.Request {
-		// s.Logf("Result after merge generate same request.", nil)
-	}
+	// if req == s.Request {
+	// s.Logf("Result after merge generate same request.", nil)
+	// }
 
 	// swap
 	prevReq := s.Request
@@ -213,9 +213,9 @@ func (s *Scan) Poke(client HTTPDoer) (err error) {
 	s.Logm("Poke", "Poking")
 
 	// Add 5s timeout if it is http.Client
-	switch client.(type) {
+	switch client := client.(type) {
 	case *http.Client:
-		client.(*http.Client).Timeout = time.Duration(3) * time.Second
+		client.Timeout = time.Duration(3) * time.Second
 	}
 
 	// delete the similarity case for the domain.
@@ -264,9 +264,9 @@ func (s *Scan) UpdateFingerprint() {
 		if f.Request == 0 {
 			f.Request = hash(s.Request.URL.String() + "\n" + s.RequestBody)
 		}
-		if f.RequestFull == 0 {
-			// TODO
-		}
+		// if f.RequestFull == 0 {
+		// TODO
+		// }
 	}
 
 	if f.ResponseSimilarity == 0 {

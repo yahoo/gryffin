@@ -20,8 +20,7 @@ func testCrawlAsync(t *testing.T, r gryffin.Renderer) {
 
 	s := gryffin.NewScan("GET", url, "")
 	r.Do(s)
-	s = <-r.GetRequestBody()
-	// t.Logf("Got async body %s", s)
+	<-r.GetRequestBody()
 	for link := range r.GetLinks() {
 		t.Logf("Got link %s", link.Request.URL)
 	}

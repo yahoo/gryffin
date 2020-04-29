@@ -124,16 +124,18 @@ func linkChannels(s *gryffin.Scan) {
 	// Start, Poke -> RateLimit
 	go func() {
 		for scan := range chanStart {
-			err := scan.Poke(&http.Client{})
-			if err != nil {
-				// if scan.HitCount <= 5 {
-				// 	go func() {
-				// 		time.Sleep(5 * time.Second)
-				// 		chanStart <- scan
-				// 	}()
-				// }
-				// continue
-			}
+			// TODO: add error handling
+			// err := scan.Poke(&http.Client{})
+			_ = scan.Poke(&http.Client{})
+			// if err != nil {
+			// if scan.HitCount <= 5 {
+			// 	go func() {
+			// 		time.Sleep(5 * time.Second)
+			// 		chanStart <- scan
+			// 	}()
+			// }
+			// continue
+			// }
 			chanRateLimit <- scan
 		}
 	}()

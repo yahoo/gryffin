@@ -25,16 +25,19 @@ import (
 	"github.com/yahoo/gryffin/renderer"
 )
 
-var storage = flag.String("storage", "memory", "storag method or the storage url")
-var service string
-var url string
-var wg sync.WaitGroup
-var wq chan bool
+var (
+	// storage is currently unused - TODO: use or remove
+	// storage = flag.String("storage", "memory", "storag method or the storage url")
+	service string
+	url     string
+	wg      sync.WaitGroup
+	wq      chan bool
 
-var t *gryffin.Scan
+	t *gryffin.Scan
 
-var logWriter io.Writer
-var store *gryffin.GryffinStore
+	logWriter io.Writer
+	store     *gryffin.GryffinStore
+)
 
 // var method = flag.String("method", "GET", "the HTTP method for the request.")
 // var url string
@@ -45,11 +48,6 @@ func usage() {
 	fmt.Fprintf(os.Stderr, "\tgryffin-distributed --storage=[memory,redis-url] [seed,crawl,fuzz-sqlmap,fuzz-arachni] [url] \n")
 	fmt.Fprintf(os.Stderr, "Flags:\n")
 	flag.PrintDefaults()
-}
-
-// handler
-type h struct {
-	HandleMessage nsq.HandlerFunc
 }
 
 func captureCtrlC() {

@@ -35,7 +35,6 @@ func TestNewScan(t *testing.T) {
 		t.Error("Scan is nil.")
 	}
 	// TODO - verify s.DomainAllowed.
-	t.Logf("Jobid: %s.", s.Job.ID)
 }
 
 func TestNewScanInvalid(t *testing.T) {
