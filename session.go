@@ -10,17 +10,16 @@ import (
 	"strconv"
 	"time"
 
-	"github.com/yahoo/gryffin/data"
-	"github.com/yahoo/gryffin/html-distance"
+	distance "github.com/yahoo/gryffin/html-distance"
 )
 
 type GryffinStore struct {
 	Oracles map[string]*distance.Oracle
 	Hashes  map[string]bool
 	Hits    map[string]int
-	store   data.Store
-	snd     chan []byte
-	rcv     chan []byte
+	// store   data.Store - currently unused, TODO: use or remove
+	snd chan []byte
+	rcv chan []byte
 }
 
 type PublishMessage struct {

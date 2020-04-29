@@ -73,28 +73,28 @@ func NewMemoryStore() *MemoryStore {
 func convertIntToPtr(v interface{}) (s *int64, ok bool) {
 	var t int64
 
-	switch v.(type) {
+	switch v := v.(type) {
 
 	case int:
-		t = int64(v.(int))
+		t = int64(v)
 	case int8:
-		t = int64(v.(int8))
+		t = int64(v)
 	case int16:
-		t = int64(v.(int16))
+		t = int64(v)
 	case int32:
-		t = int64(v.(int32))
+		t = int64(v)
 	case int64:
-		t = int64(v.(int64))
+		t = v
 	case uint:
-		t = int64(v.(uint))
+		t = int64(v)
 	case uint8:
-		t = int64(v.(uint8))
+		t = int64(v)
 	case uint16:
-		t = int64(v.(uint16))
+		t = int64(v)
 	case uint32:
-		t = int64(v.(uint32))
+		t = int64(v)
 	case uint64:
-		t = int64(v.(uint64))
+		t = int64(v)
 	}
 
 	return &t, ok
@@ -102,29 +102,29 @@ func convertIntToPtr(v interface{}) (s *int64, ok bool) {
 
 func convertPtrToInt(v interface{}) (s int64, ok bool) {
 
-	switch v.(type) {
+	switch v := v.(type) {
 
 	case *int:
-		return int64(*(v.(*int))), true
+		return int64(*v), true
 	case *int8:
-		return int64(*(v.(*int8))), true
+		return int64(*v), true
 	case *int16:
-		return int64(*(v.(*int16))), true
+		return int64(*v), true
 	case *int32:
-		return int64(*(v.(*int32))), true
+		return int64(*v), true
 	case *int64:
-		return int64(*(v.(*int64))), true
+		return *v, true
 
 	case *uint:
-		return int64(*(v.(*uint))), true
+		return int64(*v), true
 	case *uint8:
-		return int64(*(v.(*uint8))), true
+		return int64(*v), true
 	case *uint16:
-		return int64(*(v.(*uint16))), true
+		return int64(*v), true
 	case *uint32:
-		return int64(*(v.(*uint32))), true
+		return int64(*v), true
 	case *uint64:
-		return int64(*(v.(*uint64))), true
+		return int64(*v), true
 	}
 
 	return

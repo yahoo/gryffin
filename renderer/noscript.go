@@ -10,6 +10,7 @@ import (
 	"net/http"
 	"strings"
 	"time"
+
 	// "sync"
 
 	"github.com/yahoo/gryffin"
@@ -75,9 +76,10 @@ func (r *NoScriptRenderer) Do(s *gryffin.Scan) {
 									if link.IsScanAllowed() {
 										r.chanLinks <- link
 									}
-								} else {
-									// ignore relative URL. TOFIX.
 								}
+								// else {
+								// FIXME: ignore relative URL.
+								// }
 							} else {
 								log.Printf("error in building request: %s", err)
 							}
