@@ -13,17 +13,20 @@ var (
 	memoryStore   *GryffinStore
 	logWriter     io.Writer
 	memoryStoreMu sync.Mutex
+	logWriterMu   sync.Mutex
 )
 
 // SetMemoryStore sets the package internal global variable
 // for the memory store.
 func SetMemoryStore(m *GryffinStore) {
-	m.Lock()
+	memoryStoreMu.Lock()
 	memoryStore = m
-	m.Unlock()
+	memoryStoreMu.Unlock()
 }
 
 // SetLogWriter sets the log writer.
 func SetLogWriter(w io.Writer) {
+	logWriterMu.Lock()
 	logWriter = w
+	logWriterMu.Unlock()
 }

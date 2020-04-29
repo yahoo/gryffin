@@ -418,6 +418,8 @@ func (s *Scan) Log(v interface{}) {
 	if logWriter == nil {
 		return
 	}
+	logWriterMu.Lock()
 	encoder := json.NewEncoder(logWriter)
 	encoder.Encode(v)
+	logWriterMu.Unlock()
 }
