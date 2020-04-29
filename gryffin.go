@@ -84,9 +84,11 @@ type LogMessage struct {
 // NewScan creates a scan.
 func NewScan(method, url, post string) *Scan {
 	// ensure we got a memory store..
+	memoryStoreMu.Lock()
 	if memoryStore == nil {
 		memoryStore = NewGryffinStore()
 	}
+	memoryStoreMu.Unlock()
 
 	id := GenRandomID()
 

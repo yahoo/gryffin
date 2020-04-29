@@ -6,17 +6,21 @@ package gryffin
 
 import (
 	"io"
+	"sync"
 )
 
 var (
-	memoryStore *GryffinStore
-	logWriter   io.Writer
+	memoryStore   *GryffinStore
+	logWriter     io.Writer
+	memoryStoreMu sync.Mutex
 )
 
 // SetMemoryStore sets the package internal global variable
 // for the memory store.
 func SetMemoryStore(m *GryffinStore) {
+	m.Lock()
 	memoryStore = m
+	m.Unlock()
 }
 
 // SetLogWriter sets the log writer.
