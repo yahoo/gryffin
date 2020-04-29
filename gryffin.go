@@ -13,7 +13,6 @@ import (
 	"fmt"
 	"hash/fnv"
 	"io/ioutil"
-	"log"
 	"net"
 	"net/http"
 	"net/http/cookiejar"
@@ -242,8 +241,6 @@ func (s *Scan) ReadResponseBody() {
 		if b, err := ioutil.ReadAll(s.Response.Body); err == nil {
 			s.ResponseBody = string(b)
 			s.Response.Body = ioutil.NopCloser(bytes.NewReader(b))
-		} else {
-			log.Printf("ReadResponseBody: err=%v", err)
 		}
 	}
 }
