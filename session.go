@@ -13,6 +13,7 @@ import (
 	distance "github.com/yahoo/gryffin/html-distance"
 )
 
+// GryffinStore includes data and handles for Gryffin message processing,
 type GryffinStore struct {
 	Oracles map[string]*distance.Oracle
 	Hashes  map[string]bool
@@ -22,6 +23,7 @@ type GryffinStore struct {
 	rcv chan []byte
 }
 
+// PublishMessage
 type PublishMessage struct {
 	F string // function, i.e. See or Seen
 	T string // type (kind), i.e. oracle or hash

@@ -30,7 +30,7 @@ func (m *MemoryStore) Set(key string, value interface{}) bool {
 	return true
 }
 
-// Get retrieve the value pointed by the key.
+// Get retrieves the value pointed by the key.
 func (m *MemoryStore) Get(key string) (value interface{}, ok bool) {
 	value, ok = m.heap[key]
 	switch value.(type) {
@@ -49,6 +49,8 @@ func (m *MemoryStore) IncrBy(key string, delta int64) (newVal int64) {
 
 }
 
+// DelPrefix deletes records from the MemoryStore's heap
+// when the keys match the given prefix.
 func (m *MemoryStore) DelPrefix(prefix string) {
 	for k := range m.heap {
 		if strings.HasPrefix(k, prefix) {
@@ -57,7 +59,7 @@ func (m *MemoryStore) DelPrefix(prefix string) {
 	}
 }
 
-// Dummy method
+// Publish is a dummy no-op method.
 func (m *MemoryStore) Publish(k string, d interface{}) {
 
 }

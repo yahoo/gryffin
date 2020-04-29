@@ -6,16 +6,20 @@ package gryffin
 
 import (
 	"io"
-	// "io/ioutil"
 )
 
-var memoryStore *GryffinStore
-var logWriter io.Writer
+var (
+	memoryStore *GryffinStore
+	logWriter   io.Writer
+)
 
+// SetMemoryStore sets the package internal global variable
+// for the memory store.
 func SetMemoryStore(m *GryffinStore) {
 	memoryStore = m
 }
 
+// SetLogWriter sets the log writer.
 func SetLogWriter(w io.Writer) {
 	logWriter = w
 }
