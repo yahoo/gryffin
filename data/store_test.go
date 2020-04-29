@@ -19,7 +19,7 @@ func testStore(t *testing.T, s Store) {
 		t.Error("Incr failed.")
 	}
 	if v, ok := s.Get("foo"); v.(int64) != 110 {
-		t.Errorf("Incr is inconsistent %s, %s and %s", ok, v.(int64) == 110, v)
+		t.Errorf("Incr is inconsistent %t, %t and %s", ok, v.(int64) == 110, v)
 	}
 
 }

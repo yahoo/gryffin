@@ -6,6 +6,7 @@ package gryffin
 
 import (
 	"encoding/json"
+	"log"
 	"net/http"
 )
 
@@ -31,6 +32,7 @@ func (s *Scan) Json() []byte {
 	}
 	b, err := json.Marshal(ss)
 	if err != nil {
+		log.Printf("Scan.Json: err=%v", err)
 		s.Error("Json", err)
 	}
 	return b

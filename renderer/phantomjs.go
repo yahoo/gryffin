@@ -157,7 +157,6 @@ func (l *link) toScan(parent *gryffin.Scan) *gryffin.Scan {
 }
 
 func (r *PhantomJSRenderer) extract(stdout io.ReadCloser, s *gryffin.Scan) {
-
 	defer close(r.done)
 
 	dec := json.NewDecoder(stdout)
@@ -166,19 +165,18 @@ func (r *PhantomJSRenderer) extract(stdout io.ReadCloser, s *gryffin.Scan) {
 		err := dec.Decode(&m)
 		if err == io.EOF {
 			return
-		} else {
-			if m.responseMessage != nil {
-				m.Response.fill(s)
-				if s.IsDuplicatedPage() {
-					return
-				}
-				r.chanResponse <- s
-				r.parseDetails(&m.Response.Details, s)
+		}
+		if m.responseMessage != nil {
+			m.Response.fill(s)
+			if s.IsDuplicatedPage() {
+				return
 			}
+			r.chanResponse <- s
+			r.parseDetails(&m.Response.Details, s)
+		}
 
-			if m.details != nil {
-				r.parseDetails(m.details, s)
-			}
+		if m.details != nil {
+			r.parseDetails(m.details, s)
 		}
 	}
 }

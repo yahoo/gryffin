@@ -64,8 +64,8 @@ func linkChannels(s *gryffin.Scan) {
 
 			}()
 
+			scan := scan // prevent capturing by goroutine below
 			go func() {
-
 				//
 				// Renderer will close all channels when a page is duplicated.
 				// Therefore we don't need to test whether the link is coming
@@ -89,7 +89,7 @@ func linkChannels(s *gryffin.Scan) {
 
 	go func() {
 		for scan := range chanFuzz {
-
+			scan := scan // prevent capture by func literal below
 			go func() {
 				f := &arachni.Fuzzer{}
 				f.Fuzz(scan)

@@ -20,7 +20,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/yahoo/gryffin/html-distance"
+	distance "github.com/yahoo/gryffin/html-distance"
 )
 
 // A Scan consists of the job, target, request and response.
@@ -83,7 +83,6 @@ type LogMessage struct {
 
 // NewScan creates a scan.
 func NewScan(method, url, post string) *Scan {
-
 	// ensure we got a memory store..
 	if memoryStore == nil {
 		memoryStore = NewGryffinStore()
@@ -107,7 +106,7 @@ func NewScan(method, url, post string) *Scan {
 		job.DomainsAllowed = []string{host}
 	}
 
-	// // Add chrome user agent
+	// Add chrome user agent
 	req.Header.Set("User-Agent", "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_10_4) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/44.0.2403.107 Safari/537.36")
 
 	return &Scan{
@@ -213,7 +212,7 @@ func (s *Scan) Poke(client HTTPDoer) (err error) {
 
 	s.Logm("Poke", "Poking")
 
-	// Add 5s timeout if it is http.client
+	// Add 5s timeout if it is http.Client
 	switch client.(type) {
 	case *http.Client:
 		client.(*http.Client).Timeout = time.Duration(3) * time.Second
@@ -348,9 +347,8 @@ func (s *Scan) IsDuplicatedPage() bool {
 		memoryStore.See(s.Job.ID, "oracle", f)
 		s.Logm("IsDuplicatedPage", "Unique Page")
 		return false
-	} else {
-		s.Logm("IsDuplicatedPage", "Duplicate Page")
 	}
+	s.Logm("IsDuplicatedPage", "Duplicate Page")
 	return true
 }
 
@@ -368,16 +366,14 @@ func (s *Scan) Fuzz(fuzzer Fuzzer) (int, error) {
 
 // ShouldCrawl checks if the links should be queued for next crawl.
 func (s *Scan) ShouldCrawl() bool {
-
 	s.UpdateFingerprint()
 	f := s.Fingerprint.URL
 	if !memoryStore.Seen(s.Job.ID, "hash", f, 0) {
 		memoryStore.See(s.Job.ID, "hash", f)
 		s.Logm("ShouldCrawl", "Unique Link")
 		return true
-	} else {
-		s.Logm("ShouldCrawl", "Duplicate Link")
 	}
+	s.Logm("ShouldCrawl", "Duplicate Link")
 	return false
 }
 
