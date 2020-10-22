@@ -71,7 +71,7 @@ type Renderer interface {
 	GetLinks() <-chan *Scan
 }
 
-// LogMessage contains the data fields to be marshall as a json for forwarding to the log processor.
+// LogMessage contains the data fields to be marshalled as JSON for forwarding to the log processor.
 type LogMessage struct {
 	Service string
 	Msg     string
@@ -84,9 +84,11 @@ type LogMessage struct {
 // NewScan creates a scan.
 func NewScan(method, url, post string) *Scan {
 	// ensure we got a memory store..
+	memoryStoreMu.Lock()
 	if memoryStore == nil {
 		memoryStore = NewGryffinStore()
 	}
+	memoryStoreMu.Unlock()
 
 	id := GenRandomID()
 
@@ -352,7 +354,7 @@ func (s *Scan) IsDuplicatedPage() bool {
 	return true
 }
 
-// Scan runs the vulnerability fuzzer, return the issue count
+// Fuzz runs the vulnerability fuzzer, return the issue count.
 func (s *Scan) Fuzz(fuzzer Fuzzer) (int, error) {
 	c, err := fuzzer.Fuzz(s)
 	return c, err
@@ -379,11 +381,13 @@ func (s *Scan) ShouldCrawl() bool {
 
 // TODO - LogFmt (fmt string)
 // TODO - LogI (interface)
+// Error logs the error for the given service.
 func (s *Scan) Error(service string, err error) {
 	errmsg := fmt.Sprint(err)
 	s.Logm(service, errmsg)
 }
 
+// Logmf logs the message for the given service.
 func (s *Scan) Logmf(service, format string, a ...interface{}) {
 	s.Logm(service, fmt.Sprintf(format, a...))
 }
@@ -402,15 +406,20 @@ func (s *Scan) Logm(service, msg string) {
 	s.Log(m)
 }
 
+// Logf logs using the given format string.
 func (s *Scan) Logf(format string, a ...interface{}) {
 	str := fmt.Sprintf(format, a...)
 	s.Log(str)
 }
 
+// Log encodes the given argument as JSON and writes it to
+// the log writer.
 func (s *Scan) Log(v interface{}) {
 	if logWriter == nil {
 		return
 	}
+	logWriterMu.Lock()
 	encoder := json.NewEncoder(logWriter)
 	encoder.Encode(v)
+	logWriterMu.Unlock()
 }

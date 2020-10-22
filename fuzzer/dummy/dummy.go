@@ -11,8 +11,10 @@ import (
 	"github.com/yahoo/gryffin"
 )
 
+// Fuzzer is the handle for the fuzzing methods.
 type Fuzzer struct{}
 
+// Fuzz runs a dummy scan.
 func (s *Fuzzer) Fuzz(g *gryffin.Scan) (count int, err error) {
 
 	cmd := exec.Command("echo", g.Request.URL.Host)

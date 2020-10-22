@@ -8,20 +8,24 @@ import (
 	"encoding/json"
 	"fmt"
 	"strconv"
+	"sync"
 	"time"
 
 	distance "github.com/yahoo/gryffin/html-distance"
 )
 
+// GryffinStore includes data and handles for Gryffin message processing,
 type GryffinStore struct {
 	Oracles map[string]*distance.Oracle
 	Hashes  map[string]bool
 	Hits    map[string]int
+	Mu      sync.RWMutex
 	// store   data.Store - currently unused, TODO: use or remove
 	snd chan []byte
 	rcv chan []byte
 }
 
+// PublishMessage is the data in the messages handled by Gryffin.
 type PublishMessage struct {
 	F string // function, i.e. See or Seen
 	T string // type (kind), i.e. oracle or hash
@@ -101,12 +105,17 @@ func (s *GryffinStore) Seen(prefix string, kind string, v uint64, r uint8) bool 
 
 	switch kind {
 	case "oracle":
+		s.Mu.RLock()
 		if oracle, ok := s.Oracles[prefix]; ok {
+			s.Mu.RUnlock()
 			return oracle.Seen(v, r)
 		}
+		s.Mu.RUnlock()
 	case "hash":
 		k := prefix + "/" + strconv.FormatUint(v, 10)
+		s.Mu.RLock()
 		_, ok := s.Hashes[k]
+		s.Mu.RUnlock()
 		return ok
 	}
 	return false
@@ -115,10 +124,14 @@ func (s *GryffinStore) Seen(prefix string, kind string, v uint64, r uint8) bool 
 func (s *GryffinStore) oracleSee(prefix string, f uint64, localOnly bool) {
 	k := prefix
 	// Local update
+	s.Mu.RLock()
 	oracle, ok := s.Oracles[k]
+	s.Mu.RUnlock()
 	if !ok {
+		s.Mu.Lock()
 		s.Oracles[k] = distance.NewOracle()
 		oracle = s.Oracles[k]
+		s.Mu.Unlock()
 	}
 	oracle.See(f)
 
@@ -134,7 +147,9 @@ func (s *GryffinStore) oracleSee(prefix string, f uint64, localOnly bool) {
 
 func (s *GryffinStore) hashesSee(prefix string, h uint64, localOnly bool) {
 	k := prefix + "/" + strconv.FormatUint(h, 10)
+	s.Mu.Lock()
 	s.Hashes[k] = true
+	s.Mu.Unlock()
 	// Remote update
 	if !localOnly && s.snd != nil {
 		go func() {
@@ -148,6 +163,8 @@ func (s *GryffinStore) Hit(prefix string) bool {
 	// prefix is domain.
 	ts := time.Now().Truncate(5 * time.Second).Unix()
 	k := prefix + "/" + strconv.FormatInt(ts, 10)
+	s.Mu.Lock()
+	defer s.Mu.Unlock()
 	if v, ok := s.Hits[k]; ok {
 		if v >= 5 {
 			return false

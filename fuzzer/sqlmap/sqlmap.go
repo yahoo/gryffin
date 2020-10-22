@@ -13,8 +13,10 @@ import (
 	"github.com/yahoo/gryffin"
 )
 
+// Fuzzer is the handle for the fuzzing methods.
 type Fuzzer struct{}
 
+// Fuzz runs an sqlmap scan.
 func (s *Fuzzer) Fuzz(g *gryffin.Scan) (count int, err error) {
 
 	var cookies []string

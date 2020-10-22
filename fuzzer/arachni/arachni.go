@@ -12,10 +12,11 @@ import (
 	"github.com/yahoo/gryffin"
 )
 
+// Fuzzer is the handle for the fuzzing methods.
 type Fuzzer struct{}
 
+// Fuzz runs an Arachni scan.
 func (s *Fuzzer) Fuzz(g *gryffin.Scan) (count int, err error) {
-
 	var cookies []string
 	// for _, c := range g.CookieJar.Cookies(g.Request.URL) {
 	for _, c := range g.Cookies {
@@ -63,7 +64,6 @@ func (s *Fuzzer) Fuzz(g *gryffin.Scan) (count int, err error) {
 }
 
 func (s *Fuzzer) extract(g *gryffin.Scan, output string) (count int) {
-
 	for _, l := range strings.Split(output, "\n") {
 		l = strings.TrimSpace(l)
 		switch {

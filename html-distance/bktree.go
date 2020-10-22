@@ -12,6 +12,8 @@
 package distance
 
 import (
+	"sync"
+
 	"github.com/mfonda/simhash"
 )
 
@@ -19,6 +21,7 @@ import (
 type Oracle struct {
 	fingerprint uint64      // node value.
 	nodes       [65]*Oracle // leaf nodes
+	mu          sync.Mutex
 }
 
 // NewOracle return an oracle that could tell if the fingerprint has been seen or not.
@@ -45,6 +48,8 @@ func (n *Oracle) See(f uint64) *Oracle {
 	}
 
 	// the target node is already set,
+	n.mu.Lock()
+	defer n.mu.Unlock()
 	if c := n.nodes[d]; c != nil {
 		return c.See(f)
 	}
@@ -65,7 +70,10 @@ func (n *Oracle) Seen(f uint64, r uint8) bool {
 		if k > 64 {
 			break
 		}
-		if c := n.nodes[k]; c != nil {
+		n.mu.Lock()
+		c := n.nodes[k]
+		n.mu.Unlock()
+		if c != nil {
 			if c.Seen(f, r) {
 				return true
 			}
